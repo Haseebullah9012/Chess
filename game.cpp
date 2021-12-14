@@ -13,7 +13,7 @@ class ChessPiece
         string name;
 
     public:
-
+        
         //Get & Set Funtions of each Data Member
         void setID(Piece p) { id = p; }
 		void setColor(Color c) { color = c; }
@@ -45,31 +45,34 @@ class BoardSquare
 };
 
 BoardSquare square[8][8]; //ChessBoard Squares
-ChessPiece Pawn[16];
-ChessPiece Knight[4];
-ChessPiece Bishop[4];
-ChessPiece Rook[4];
-ChessPiece Queen[2];
-ChessPiece King[2];
+ChessPiece Pawn[16], Knight[4], Bishop[4], Rook[4], Queen[2], King[2]; //Chess-Pieces
 
 void initBoard(); //Initialize the ChessBoard
 void PrintBoard(Color); //Print the ChessBoard
 char DisplayPiece(int,int); //Display the ChessPiece
+void Game(); //The Main Game-Sequence
+void turn(); //Player's Turn
+bool over(); //To Check if the Game is Over
+
+void movePawn(BoardSquare* sourceSquare, BoardSquare* destinedSquare) {}
+void moveKnight(BoardSquare* sourceSquare, BoardSquare* destinedSquare) {}
+void moveBishop(BoardSquare* sourceSquare, BoardSquare* destinedSquare) {}
+void moveRook(BoardSquare* sourceSquare, BoardSquare* destinedSquare) {}
+void moveQueen(BoardSquare* sourceSquare, BoardSquare* destinedSquare) {}
+void moveKing(BoardSquare* sourceSquare, BoardSquare* destinedSquare) {}
+
+Color player = WHITE; //Default First-Turn
+int f1,r1, f2,r2; //The Player Inputs, for Source & Destined Rank & File
 
 int main()
 {
-    cout << "\n Haseebullah's Chess! \n";
+    cout << "\n Welcome to the Haseebullah's Chess! \n" << endl;
+    cout << "On your Turn, Enter the Index (File & Rank) of Your Piece "
+        << "and the Index (File & Rank) of the Destined-Square (Separated by Spaces). " << endl;
 
     initBoard();
+    Game();
 
-    cout << "\n White's Turn! \n\n";
-    PrintBoard(WHITE);
-
-    cout << endl << endl;
-    
-    cout << "\n Black's Turn! \n\n";
-    PrintBoard(BLACK);
-    
     getchar();
     return 0;
 }
@@ -164,8 +167,34 @@ void initBoard()
     }
 }
 
+void Game()
+{
+    while(true) 
+    {
+        PrintBoard(player);
+        
+        if(player == WHITE)
+            cout << "White's Turn: ";
+        else 
+            cout << "Black's Turn: ";
+        
+        turn();
+
+        if(over())
+            break;
+
+        //Next Turn
+        if(player == WHITE)
+            player = BLACK;
+        else
+            player = WHITE;
+    }
+}
+
 void PrintBoard(Color player)
 {
+    cout << endl << endl;
+
     if(player == WHITE)
     {
         cout << "      a   b   c   d   e   f   g   h      \n";
@@ -202,6 +231,8 @@ void PrintBoard(Color player)
         cout << "     --- --- --- --- --- --- --- ---     \n";
         cout << "      h   g   f   e   d   c   b   a      \n";
     }
+
+    cout << "\n^!_!^\n";
 }
 
 char DisplayPiece(int r, int f)
@@ -223,6 +254,59 @@ char DisplayPiece(int r, int f)
     }
 
     return '-'; //Non-Executable
+}
+
+void turn()
+{
+    cin >> f1 >> r1 >> f2 >> r2;
+
+    if(f1<1||f1>8 || f2<1||f2>8) {
+		cout << "Invalid File Number! Move Again: ";
+        turn();
+	}
+    else if(r1<1||r1>8 || r2<1||r2>8) {
+        cout << "Invalid Rank Number! Move Again: ";
+        turn();
+    }
+
+    f1--,r1--, f2--,r2--;
+
+    BoardSquare* sourceSquare = &square[r1][f1];
+    BoardSquare* destinedSquare = &square[r2][f2];
+    
+    if(sourceSquare->isEmpty) {
+        cout << "There's No Piece! Move Again: ";
+        turn();
+    }
+    else if(sourceSquare->getPiece().getColor() != player) {
+        cout << "That's Not Your Piece! Move Again: ";
+        turn();
+    }
+
+    ChessPiece ownPiece = sourceSquare->getPiece();
+    if(!destinedSquare->isEmpty) {
+        ChessPiece targetPiece = destinedSquare->getPiece();
+
+        if(ownPiece.getColor() == targetPiece.getColor()) {
+            cout << "Invalid Move! Cannot Land on Own Piece. Move Again: ";
+            turn();
+        }
+    }
+
+    switch(ownPiece.getID()) 
+    {
+        case PAWN: movePawn(sourceSquare,destinedSquare); break;
+        case KNIGHT: moveQueen(sourceSquare,destinedSquare); break;
+        case BISHOP: moveBishop(sourceSquare,destinedSquare); break;
+        case ROOK: moveRook(sourceSquare,destinedSquare); break;
+        case QUEEN: moveQueen(sourceSquare,destinedSquare); break;
+        case KING: moveKing(sourceSquare,destinedSquare); break;
+    }
+}
+
+bool over()
+{
+    return false;
 }
 
 
