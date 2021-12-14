@@ -2,22 +2,25 @@
 #include <string>
 using namespace std;
 
-enum Color { White, Black };
-enum Piece { Pawn, Knight, Bishop, Rook, Queen, King};
+enum Color { WHITE, BLACK };
+enum Piece { PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING };
 
 class ChessPiece
 {
     private:
+        Piece id;
         Color color;
-        Piece piece;
+        string name;
 
     public:
 
         //Get & Set Funtions of each Data Member
-        void setColor(Color c) { color = c; }
-		void setPiece(Piece p) { piece = p; }
-		Color getColor() { return color; }
-        Piece getPiece() { return piece; }
+        void setID(Piece p) { id = p; }
+		void setColor(Color c) { color = c; }
+		Piece getID() { return id; }
+        Color getColor() { return color; }
+        
+        string getName();
 };
 
 class BoardSquare
@@ -28,28 +31,52 @@ class BoardSquare
         ChessPiece piece;
 
     public:
-        
+        bool isEmpty;
+        BoardSquare();
+
         //Get & Set Funtions of each Data Member
         void setRank(int r) { rank = r; }
 		void setFile(int f) { file = f; }
-        void setPiece(ChessPiece p) { piece = p; }
-		int getRank() { return rank; }
+        int getRank() { return rank; }
         int getFile() { return file; }
-        ChessPiece getPiece() { return piece; }
+        
+        void setPiece(ChessPiece p) { piece = p; }
+		ChessPiece getPiece() { return piece; }
 };
 
 BoardSquare square[8][8]; //ChessBoard Squares
-ChessPiece piece[32]; //Chess Pieces
+ChessPiece Pawn[16];
+ChessPiece Knight[4];
+ChessPiece Bishop[4];
+ChessPiece Rook[4];
+ChessPiece Queen[2];
+ChessPiece King[2];
 
-void PrintBoard(string); //Print the ChessBoard
+void initBoard(); //Initialize the ChessBoard
+void PrintBoard(Color); //Print the ChessBoard
 char DisplayPiece(int,int); //Display the ChessPiece
-string PiecetoString(Piece); //Convert Enumeration Value to String
 
 int main()
 {
     cout << "\n Haseebullah's Chess! \n";
 
-    //Initialize the Board-Squares
+    initBoard();
+
+    cout << "\n White's Turn! \n\n";
+    PrintBoard(WHITE);
+
+    cout << endl << endl;
+    
+    cout << "\n Black's Turn! \n\n";
+    PrintBoard(BLACK);
+    
+    getchar();
+    return 0;
+}
+
+void initBoard()
+{
+    //Board-Squares File & Rank
     for(int r=0; r<8; r++) {
         for(int f=0; f<8; f++) {
             square[r][f].setFile(f+1);
@@ -57,79 +84,89 @@ int main()
         }
     }
 
-    //Initialize the Chess Pieces
-    for(int w=0,b=16; w<16 && b<32; w++,b++) {
-        piece[w].setColor(White);
-        piece[b].setColor(Black);
-    }
-    
-    for(int w=8,b=24; w<16 && b<32; w++,b++) {
-        piece[w].setPiece(Pawn);
-        piece[b].setPiece(Pawn);
-        for(int f=0; f<8; f++) {
-            square[1][f].setPiece(piece[w]);
-            square[6][f].setPiece(piece[b]);
+    //Chess-Pieces ID & Color
+    //Also Chess-Pieces Board-Setup
+    for(int i=0; i<16; i++) 
+    {
+        Pawn[i].setID(PAWN);
+        
+        if(i<8) {
+            Pawn[i].setColor(WHITE);
+            for(int f=0; f<8; f++)
+                square[1][f].setPiece(Pawn[i]);
         }
-    }
-    for(int w=0,b=16; w<2 && b<18; w++,b++) {
-        piece[w].setPiece(Knight);
-        piece[b].setPiece(Knight);
-        square[0][1].setPiece(piece[w]);
-        square[0][6].setPiece(piece[w]);
-        square[7][1].setPiece(piece[b]);
-        square[7][6].setPiece(piece[b]);
-    }
-    for(int w=2,b=18; w<4 && b<20; w++,b++) {
-        piece[w].setPiece(Bishop);
-        piece[b].setPiece(Bishop);
-        square[0][2].setPiece(piece[w]);
-        square[0][5].setPiece(piece[w]);
-        square[7][2].setPiece(piece[b]);
-        square[7][5].setPiece(piece[b]);
-    }
-    for(int w=4,b=20; w<6 && b<22; w++,b++) {
-        piece[w].setPiece(Rook);
-        piece[b].setPiece(Rook);
-        square[0][0].setPiece(piece[w]);
-        square[0][7].setPiece(piece[w]);
-        square[7][0].setPiece(piece[b]);
-        square[7][7].setPiece(piece[b]);
-    }
-    for(int w=6,b=22; w<7 && b<23; w++,b++) {
-        piece[w].setPiece(Queen);
-        piece[b].setPiece(Queen);
-        square[0][3].setPiece(piece[w]);
-        square[7][3].setPiece(piece[b]);
-    }
-    for(int w=7,b=23; w<8 && b<24; w++,b++) {
-        piece[w].setPiece(King);
-        piece[b].setPiece(King);
-        square[0][4].setPiece(piece[w]);
-        square[7][4].setPiece(piece[b]);
-    }
-    
-    for(int r=2; r<6; r++) {
-        for(int f=0; f<8; f++) {
-            ChessPiece noPiece;
-            square[r][f].setPiece(noPiece);
+        else {
+            Pawn[i].setColor(BLACK);
+            for(int f=0; f<8; f++)
+                square[6][f].setPiece(Pawn[i]);
         }
-    }
-    
-    cout << "\n White's Turn! \n\n";
-    PrintBoard("White");
+        
+        if(i<4)
+        {
+            Knight[i].setID(KNIGHT);
+            Bishop[i].setID(BISHOP);
+            Rook[i].setID(ROOK);
 
-    cout << endl << endl;
+            if(i<2) {
+                Knight[i].setColor(WHITE);
+                Bishop[i].setColor(WHITE);
+                Rook[i].setColor(WHITE);
+
+                square[0][0].setPiece(Rook[i]);
+                square[0][1].setPiece(Knight[i]);
+                square[0][2].setPiece(Bishop[i]);
+                square[0][5].setPiece(Bishop[i]);
+                square[0][6].setPiece(Knight[i]);
+                square[0][7].setPiece(Rook[i]);
+            }
+            else {
+                Knight[i].setColor(BLACK);
+                Bishop[i].setColor(BLACK);
+                Rook[i].setColor(BLACK);
+
+                square[7][0].setPiece(Rook[i]);
+                square[7][1].setPiece(Knight[i]);
+                square[7][2].setPiece(Bishop[i]);
+                square[7][5].setPiece(Bishop[i]);
+                square[7][6].setPiece(Knight[i]);
+                square[7][7].setPiece(Rook[i]);
+            }
+        }
+
+        if(i<2)
+        {
+            Queen[i].setID(QUEEN);
+            King[i].setID(KING);
+
+            if(i==0) {
+                Queen[i].setColor(WHITE);
+                King[i].setColor(WHITE);
+
+                square[0][3].setPiece(Queen[i]);
+                square[0][4].setPiece(King[i]);
+            }
+            else {
+                Queen[i].setColor(BLACK);
+                King[i].setColor(BLACK);
+
+                square[7][3].setPiece(Queen[i]);
+                square[7][4].setPiece(King[i]);
+            }
+        }
+    }
     
-    cout << "\n Black's Turn! \n\n";
-    PrintBoard("Black");
-    
-    getchar();
-    return 0;
+    //Chess-Pieces Squares are Now Occupied
+    for(int rw=0,rb=6; rw<2 && rb<8; rw++,rb++) {
+        for(int f=0; f<8; f++) {
+            square[rw][f].isEmpty = false;
+            square[rb][f].isEmpty = false;
+        }
+    }
 }
 
-void PrintBoard(string player)
+void PrintBoard(Color player)
 {
-    if(player == "White")
+    if(player == WHITE)
     {
         cout << "      a   b   c   d   e   f   g   h      \n";
     
@@ -147,7 +184,7 @@ void PrintBoard(string player)
         cout << "     --- --- --- --- --- --- --- ---     \n";
         cout << "      a   b   c   d   e   f   g   h      \n";
     }
-    else if(player == "Black")
+    else if(player == BLACK)
     {
         cout << "      h   g   f   e   d   c   b   a      \n";
     
@@ -165,44 +202,46 @@ void PrintBoard(string player)
         cout << "     --- --- --- --- --- --- --- ---     \n";
         cout << "      h   g   f   e   d   c   b   a      \n";
     }
-    else
-    {
-        cout << "\n\n Invalid Player \n\n"; //Error
-    }
 }
 
 char DisplayPiece(int r, int f)
 {
     ChessPiece piece = square[r][f].getPiece();
-    
-    Piece id = piece.getPiece();
-    string name = PiecetoString(id);
+    string name = piece.getName();
 
-    if(piece.getColor() == White) {
-        return toupper(name[0]);
-    }
-    else if(piece.getColor() == Black) {
-        return tolower(name[0]);
+    if(name == "Knight")
+        name = "Night"; //K-Silent (Knight represented by N)
+
+    if(!square[r][f].isEmpty) {
+        if(piece.getColor() == WHITE)
+            return toupper(name[0]);
+        else if(piece.getColor() == BLACK)
+            return tolower(name[0]);
     }
     else {
-        return ' ';
+        return ' '; //Empty Square
     }
 
-    return '-';
+    return '-'; //Non-Executable
 }
 
-string PiecetoString(Piece p)
+
+BoardSquare::BoardSquare()
 {
-    switch (p)
+    isEmpty = true; //All Squares are Empty atFirst
+}
+
+string ChessPiece::getName()
+{
+    switch (id)
     {
-        case Pawn: return "Pawn"; break;
-        case Knight: return "Night"; break;
-        case Bishop: return "Bishop"; break;
-        case Rook: return "Rook"; break;
-        case Queen: return "Queen"; break;
-        case King: return "King"; break;
-        default: return " ";
+        case PAWN: return "Pawn"; break;
+        case KNIGHT: return "Knight"; break;
+        case BISHOP: return "Bishop"; break;
+        case ROOK: return "Rook"; break;
+        case QUEEN: return "Queen"; break;
+        case KING: return "King"; break;
     }
     
-    return "-";
+    return "-"; //Non-Executeable
 }
