@@ -5,6 +5,8 @@ using namespace std;
 enum Color { WHITE, BLACK };
 enum Piece { PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING };
 
+class BoardSquare;
+
 class ChessPiece
 {
     private:
@@ -13,13 +15,15 @@ class ChessPiece
         string name;
 
     public:
-        
-        //Get & Set Funtions of each Data Member
-        void setID(Piece); //TO Set ID and Derive the Piece-Name
+        bool pawnMoved; //To Check if the Pawn is Once Moved
+
+        void setID(Piece); //To Set ID and Derive the Piece-Name
 		void setColor(Color c) { color = c; }
 		Piece getID() { return id; }
         Color getColor() { return color; }
         string getName() { return name; }
+
+        void Move();
 };
 
 class BoardSquare
@@ -34,7 +38,6 @@ class BoardSquare
         bool isEmpty;
         BoardSquare();
 
-        //Get & Set Funtions of each Data Member
         void setRank(int r) { rank = r; }
 		void setFileNumber(int); //To Set File Number and Derive the File-Character
         int getRank() { return rank; }
@@ -43,6 +46,7 @@ class BoardSquare
         
         void setPiece(ChessPiece p) { piece = p; }
 		ChessPiece getPiece() { return piece; }
+        ChessPiece* getPieceReference() { return &piece; }
 };
 
 BoardSquare square[8][8]; //ChessBoard Squares
@@ -55,16 +59,21 @@ void Game(); //The Main Game-Sequence
 void turn(); //Player's Turn
 bool over(); //To Check if the Game is Over
 
-void movePawn(BoardSquare* sourceSquare, BoardSquare* destinedSquare) {}
-void moveKnight(BoardSquare* sourceSquare, BoardSquare* destinedSquare) {}
-void moveBishop(BoardSquare* sourceSquare, BoardSquare* destinedSquare) {}
-void moveRook(BoardSquare* sourceSquare, BoardSquare* destinedSquare) {}
-void moveQueen(BoardSquare* sourceSquare, BoardSquare* destinedSquare) {}
-void moveKing(BoardSquare* sourceSquare, BoardSquare* destinedSquare) {}
+void movePawn();
+void moveKnight();
+void moveBishop();
+void moveRook();
+void moveQueen();
+void moveKing();
 
 Color player = WHITE; //Default First-Turn
 char fc1,fc2; //The Player Inputs, for Source & Destined Files
-int r1,r2; ////The Player Inputs, for Source & Destined Ranks
+int r1,r2; //The Player Inputs, for Source & Destined Ranks
+
+BoardSquare *sourceSquare, *destinedSquare; //The Player-Input's Source & Destined Squares
+int sourceRank,sourceFile; //Derive Source-Square's Rank/File
+int destinedRank,destinedFile; //Derive Destined-Square's Rank/File
+int rankedSteps,filedSteps; //The Difference between Squares's Ranks/Files
 
 int main()
 {
@@ -94,6 +103,7 @@ void initBoard()
     for(int i=0; i<16; i++) 
     {
         Pawn[i].setID(PAWN);
+        Pawn[i].pawnMoved = false;
         
         if(i<8) {
             Pawn[i].setColor(WHITE);
@@ -261,7 +271,7 @@ char DisplayPiece(int r, int f)
 void turn()
 {
     cin >> fc1 >> r1 >> fc2 >> r2;
-    
+
     if(fc1<'a'||fc1>'h' || fc2<'a'||fc2>'h') {
 		cout << "Invalid File Character! Move Again: ";
         turn();
@@ -276,8 +286,8 @@ void turn()
     int f1 = fc1 - 'a';
     int f2 = fc2 - 'a';
     
-    BoardSquare* sourceSquare = &square[r1][f1];
-    BoardSquare* destinedSquare = &square[r2][f2];
+    sourceSquare = &square[r1][f1];
+    destinedSquare = &square[r2][f2];
     
     if(sourceSquare->isEmpty) {
         cout << "There's No Piece! Move Again: ";
@@ -298,15 +308,7 @@ void turn()
         }
     }
     
-    switch(ownPiece.getID()) 
-    {
-        case PAWN: movePawn(sourceSquare,destinedSquare); break;
-        case KNIGHT: moveQueen(sourceSquare,destinedSquare); break;
-        case BISHOP: moveBishop(sourceSquare,destinedSquare); break;
-        case ROOK: moveRook(sourceSquare,destinedSquare); break;
-        case QUEEN: moveQueen(sourceSquare,destinedSquare); break;
-        case KING: moveKing(sourceSquare,destinedSquare); break;
-    }
+    ownPiece.Move();
 }
 
 bool over()
@@ -338,5 +340,134 @@ void ChessPiece::setID(Piece p)
         case ROOK: name = "Rook"; break;
         case QUEEN: name = "Queen"; break;
         case KING: name = "King"; break;
+    }
+}
+
+void ChessPiece::Move()
+{
+    sourceRank = sourceSquare->getRank();
+	sourceFile = sourceSquare->getFileNumber();
+	destinedRank = destinedSquare->getRank();
+	destinedFile = destinedSquare->getFileNumber();
+    
+    rankedSteps = destinedRank-sourceRank;
+    filedSteps = destinedFile-sourceFile;
+    
+    switch(id) 
+    {
+        case PAWN: movePawn(); break;
+        case KNIGHT: moveKnight(); break;
+        case BISHOP: moveBishop(); break;
+        case ROOK: moveRook(); break;
+        case QUEEN: moveQueen(); break;
+        case KING: moveKing(); break;
+    }
+}
+
+
+void movePawn()
+{
+    ChessPiece* ownPiece = sourceSquare->getPieceReference();
+    
+    if(player == BLACK) {
+        rankedSteps = -rankedSteps;
+    }
+    
+    bool stepStraight = (filedSteps==0 && rankedSteps==1) && destinedSquare->isEmpty;
+    bool stepDiagonal = (abs(filedSteps)==1 && rankedSteps==1) && (!destinedSquare->isEmpty);
+    bool doubleStep = (filedSteps==0 && rankedSteps==2) && !ownPiece->pawnMoved;
+    
+    if(stepStraight || stepDiagonal || doubleStep) {
+        ownPiece->pawnMoved = true;
+        destinedSquare->setPiece(sourceSquare->getPiece());
+        sourceSquare->isEmpty = true;
+        destinedSquare->isEmpty = false;
+    }
+    else {
+        cout << "Invalid Move! Pawn Cannot Move Like This. Move Again: ";
+        turn();
+    }
+}
+
+void moveKnight()
+{
+    bool rankedMovement = abs(rankedSteps)==2 && abs(filedSteps)==1;
+    bool filedMovement = abs(filedSteps)==2 && abs(rankedSteps)==1;
+    
+    if(rankedMovement || filedMovement) {
+        destinedSquare->setPiece(sourceSquare->getPiece());
+        sourceSquare->isEmpty = true;
+        destinedSquare->isEmpty = false;
+    }
+    else {
+        cout << "Invalid Move! Knight Cannot Move Like This. Move Again: ";
+        turn();
+    }
+}
+
+void moveBishop()
+{
+    bool diagonalMovement = abs(rankedSteps)==abs(filedSteps);
+    
+    if(diagonalMovement) 
+    {
+        destinedSquare->setPiece(sourceSquare->getPiece());
+        sourceSquare->isEmpty = true;
+        destinedSquare->isEmpty = false;
+    }
+    else {
+        cout << "Invalid Move! Bishop Cannot Move Like This. Move Again: ";
+        turn();
+    }
+}
+
+void moveRook()
+{
+    bool rankedMovement = destinedFile==sourceFile;
+    bool filedMovement = destinedRank==sourceRank;
+    
+    if(rankedMovement || filedMovement) 
+    {
+        destinedSquare->setPiece(sourceSquare->getPiece());
+        sourceSquare->isEmpty = true;
+        destinedSquare->isEmpty = false;
+    }
+    else {
+        cout << "Invalid Move! Rook Cannot Move Like This. Move Again: ";
+        turn();
+    }
+}
+
+void moveQueen()
+{
+    bool diagonalMovement = abs(rankedSteps)==abs(filedSteps);
+    bool rankedMovement = destinedFile==sourceFile;
+    bool filedMovement = destinedRank==sourceRank;
+    
+    if(rankedMovement || filedMovement || diagonalMovement)
+    {
+        destinedSquare->setPiece(sourceSquare->getPiece());
+        sourceSquare->isEmpty = true;
+        destinedSquare->isEmpty = false;
+    }
+    else {
+        cout << "Invalid Move! Queen Cannot Move Like This. Move Again: ";
+        turn();
+    }
+}
+
+void moveKing()
+{
+    bool stepMovement = abs(rankedSteps)==1 || abs(filedSteps)==1;
+
+    if(stepMovement)
+    {
+        destinedSquare->setPiece(sourceSquare->getPiece());
+        sourceSquare->isEmpty = true;
+        destinedSquare->isEmpty = false;
+    }
+    else {
+        cout << "Invalid Move! King Cannot Move Like This. Move Again: ";
+        turn();
     }
 }
