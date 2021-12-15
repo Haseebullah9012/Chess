@@ -15,19 +15,19 @@ class ChessPiece
     public:
         
         //Get & Set Funtions of each Data Member
-        void setID(Piece p) { id = p; }
+        void setID(Piece); //TO Set ID and Derive the Piece-Name
 		void setColor(Color c) { color = c; }
 		Piece getID() { return id; }
         Color getColor() { return color; }
-        
-        string getName();
+        string getName() { return name; }
 };
 
 class BoardSquare
 {
     private:
         int rank;
-        int file;
+        int fileNumber;
+        char file;
         ChessPiece piece;
 
     public:
@@ -36,9 +36,10 @@ class BoardSquare
 
         //Get & Set Funtions of each Data Member
         void setRank(int r) { rank = r; }
-		void setFile(int f) { file = f; }
+		void setFileNumber(int); //To Set File Number and Derive the File-Character
         int getRank() { return rank; }
-        int getFile() { return file; }
+        int getFileNumber() { return fileNumber; }
+        char getFile() { return file; }
         
         void setPiece(ChessPiece p) { piece = p; }
 		ChessPiece getPiece() { return piece; }
@@ -62,7 +63,8 @@ void moveQueen(BoardSquare* sourceSquare, BoardSquare* destinedSquare) {}
 void moveKing(BoardSquare* sourceSquare, BoardSquare* destinedSquare) {}
 
 Color player = WHITE; //Default First-Turn
-int f1,r1, f2,r2; //The Player Inputs, for Source & Destined Rank & File
+char fc1,fc2; //The Player Inputs, for Source & Destined Files
+int r1,r2; ////The Player Inputs, for Source & Destined Ranks
 
 int main()
 {
@@ -82,7 +84,7 @@ void initBoard()
     //Board-Squares File & Rank
     for(int r=0; r<8; r++) {
         for(int f=0; f<8; f++) {
-            square[r][f].setFile(f+1);
+            square[r][f].setFileNumber(f+1);
             square[r][f].setRank(r+1);
         }
     }
@@ -177,9 +179,9 @@ void Game()
             cout << "White's Turn: ";
         else 
             cout << "Black's Turn: ";
-        
-        turn();
 
+        turn();
+        
         if(over())
             break;
 
@@ -258,10 +260,10 @@ char DisplayPiece(int r, int f)
 
 void turn()
 {
-    cin >> f1 >> r1 >> f2 >> r2;
-
-    if(f1<1||f1>8 || f2<1||f2>8) {
-		cout << "Invalid File Number! Move Again: ";
+    cin >> fc1 >> r1 >> fc2 >> r2;
+    
+    if(fc1<'a'||fc1>'h' || fc2<'a'||fc2>'h') {
+		cout << "Invalid File Character! Move Again: ";
         turn();
 	}
     else if(r1<1||r1>8 || r2<1||r2>8) {
@@ -269,8 +271,11 @@ void turn()
         turn();
     }
 
-    f1--,r1--, f2--,r2--;
-
+    //Set File & Rank for Array-Index
+    r1--, r2--;
+    int f1 = fc1 - 'a';
+    int f2 = fc2 - 'a';
+    
     BoardSquare* sourceSquare = &square[r1][f1];
     BoardSquare* destinedSquare = &square[r2][f2];
     
@@ -282,7 +287,7 @@ void turn()
         cout << "That's Not Your Piece! Move Again: ";
         turn();
     }
-
+    
     ChessPiece ownPiece = sourceSquare->getPiece();
     if(!destinedSquare->isEmpty) {
         ChessPiece targetPiece = destinedSquare->getPiece();
@@ -292,7 +297,7 @@ void turn()
             turn();
         }
     }
-
+    
     switch(ownPiece.getID()) 
     {
         case PAWN: movePawn(sourceSquare,destinedSquare); break;
@@ -315,17 +320,23 @@ BoardSquare::BoardSquare()
     isEmpty = true; //All Squares are Empty atFirst
 }
 
-string ChessPiece::getName()
+void BoardSquare::setFileNumber(int f)
 {
+    fileNumber = f;
+    file = fileNumber-1 + 'a';
+}
+
+void ChessPiece::setID(Piece p)
+{
+    id = p;
+
     switch (id)
     {
-        case PAWN: return "Pawn"; break;
-        case KNIGHT: return "Knight"; break;
-        case BISHOP: return "Bishop"; break;
-        case ROOK: return "Rook"; break;
-        case QUEEN: return "Queen"; break;
-        case KING: return "King"; break;
+        case PAWN: name = "Pawn"; break;
+        case KNIGHT: name = "Knight"; break;
+        case BISHOP: name = "Bishop"; break;
+        case ROOK: name = "Rook"; break;
+        case QUEEN: name = "Queen"; break;
+        case KING: name = "King"; break;
     }
-    
-    return "-"; //Non-Executeable
 }
