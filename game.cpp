@@ -70,7 +70,7 @@ Color player = WHITE; //Default First-Turn
 char fc1,fc2; //The Player Inputs, for Source & Destined Files
 int r1,r2; //The Player Inputs, for Source & Destined Ranks
 
-BoardSquare *sourceSquare, *destinedSquare; //The Player-Input's Source & Destined Squares
+BoardSquare *sourceSquare,*destinedSquare; //The Player-Input's Source & Destined Squares
 int sourceRank,sourceFile; //Derive Source-Square's Rank/File
 int destinedRank,destinedFile; //Derive Destined-Square's Rank/File
 int rankedSteps,filedSteps; //The Difference between Squares's Ranks/Files
@@ -79,7 +79,7 @@ int main()
 {
     cout << "\n Welcome to the Haseebullah's Chess! \n" << endl;
     cout << "On your Turn, Enter the Index (File & Rank) of Your Piece "
-        << "and the Index (File & Rank) of the Destined-Square (Separated by Spaces). " << endl;
+        << "and the Index (File & Rank) of the Destined-Square. " << endl;
 
     initBoard();
     Game();
@@ -147,7 +147,7 @@ void initBoard()
                 square[7][7].setPiece(Rook[i]);
             }
         }
-
+        
         if(i<2)
         {
             Queen[i].setID(QUEEN);
@@ -369,7 +369,7 @@ void movePawn()
 {
     ChessPiece* ownPiece = sourceSquare->getPieceReference();
     
-    if(player == BLACK) {
+    if(player==BLACK) {
         rankedSteps = -rankedSteps;
     }
     
@@ -377,11 +377,29 @@ void movePawn()
     bool stepDiagonal = (abs(filedSteps)==1 && rankedSteps==1) && (!destinedSquare->isEmpty);
     bool doubleStep = (filedSteps==0 && rankedSteps==2) && !ownPiece->pawnMoved;
     
-    if(stepStraight || stepDiagonal || doubleStep) {
-        ownPiece->pawnMoved = true;
-        destinedSquare->setPiece(sourceSquare->getPiece());
-        sourceSquare->isEmpty = true;
-        destinedSquare->isEmpty = false;
+    bool valid = true;
+
+    if(stepStraight || stepDiagonal || doubleStep)
+    {    
+        if(doubleStep) {
+            int r=1;
+            if(player==BLACK)
+                r=-1;
+            
+            if(!square[sourceRank+r-1][sourceFile-1].isEmpty)
+                valid = false;
+        }
+        
+        if(valid) {
+            ownPiece->pawnMoved = true;
+            destinedSquare->setPiece(sourceSquare->getPiece());
+            sourceSquare->isEmpty = true;
+            destinedSquare->isEmpty = false;
+        }
+        else {
+            cout << "Invalid Move! Pawn Cannot Jump Other Pieces. Move Again: ";
+            turn();
+        }
     }
     else {
         cout << "Invalid Move! Pawn Cannot Move Like This. Move Again: ";
@@ -408,12 +426,28 @@ void moveKnight()
 void moveBishop()
 {
     bool diagonalMovement = abs(rankedSteps)==abs(filedSteps);
-    
+    bool valid = true;
+
     if(diagonalMovement) 
     {
-        destinedSquare->setPiece(sourceSquare->getPiece());
-        sourceSquare->isEmpty = true;
-        destinedSquare->isEmpty = false;
+        int stepR = rankedSteps/abs(rankedSteps);
+        int stepF = filedSteps/abs(filedSteps);
+        for(int r=stepR,f=stepF; abs(r)<abs(rankedSteps); r+=stepR,f+=stepF) {
+            if(!square[sourceRank+r-1][sourceFile+f-1].isEmpty) {
+                valid = false;
+                break;
+            }
+        }
+
+        if(valid) {
+            destinedSquare->setPiece(sourceSquare->getPiece());
+            sourceSquare->isEmpty = true;
+            destinedSquare->isEmpty = false;
+        }
+        else {
+            cout << "Invalid Move! Bishop Cannot Jump Other Pieces. Move Again: ";
+            turn();
+        }
     }
     else {
         cout << "Invalid Move! Bishop Cannot Move Like This. Move Again: ";
@@ -426,11 +460,38 @@ void moveRook()
     bool rankedMovement = destinedFile==sourceFile;
     bool filedMovement = destinedRank==sourceRank;
     
+    bool valid = true;
+
     if(rankedMovement || filedMovement) 
     {
-        destinedSquare->setPiece(sourceSquare->getPiece());
-        sourceSquare->isEmpty = true;
-        destinedSquare->isEmpty = false;
+        if(rankedMovement) {
+            int step = rankedSteps/abs(rankedSteps);
+            for(int r=step; abs(r)<abs(rankedSteps); r+=step) {
+                if(!square[sourceRank+r-1][sourceFile-1].isEmpty) {
+                    valid = false;
+                    break;
+                }
+            }
+		}
+        else if(filedMovement) {
+            int step = filedSteps/abs(filedSteps);
+            for(int f=step; abs(f)<abs(filedSteps); f+=step) {
+				if(!square[sourceRank-1][sourceFile+f-1].isEmpty) {
+                    valid = false;
+                    break;
+                }
+			}
+		}
+		
+        if(valid) {
+            destinedSquare->setPiece(sourceSquare->getPiece());
+            sourceSquare->isEmpty = true;
+            destinedSquare->isEmpty = false;
+        }
+        else {
+            cout << "Invalid Move! Rook Cannot Jump Other Pieces. Move Again: ";
+            turn();
+        }
     }
     else {
         cout << "Invalid Move! Rook Cannot Move Like This. Move Again: ";
@@ -443,12 +504,48 @@ void moveQueen()
     bool diagonalMovement = abs(rankedSteps)==abs(filedSteps);
     bool rankedMovement = destinedFile==sourceFile;
     bool filedMovement = destinedRank==sourceRank;
-    
+    bool valid = true;
+
     if(rankedMovement || filedMovement || diagonalMovement)
     {
-        destinedSquare->setPiece(sourceSquare->getPiece());
-        sourceSquare->isEmpty = true;
-        destinedSquare->isEmpty = false;
+        if(rankedMovement) {
+            int step = rankedSteps/abs(rankedSteps);
+            for(int r=step; abs(r)<abs(rankedSteps); r+=step) {
+                if(!square[sourceRank+r-1][sourceFile-1].isEmpty) {
+                    valid = false;
+                    break;
+                }
+            }
+		}
+        else if(filedMovement) {
+            int step = filedSteps/abs(filedSteps);
+            for(int f=step; abs(f)<abs(filedSteps); f+=step) {
+				if(!square[sourceRank-1][sourceFile+f-1].isEmpty) {
+                    valid = false;
+                    break;
+                }
+			}
+		}
+        else if(diagonalMovement) {
+            int stepR = rankedSteps/abs(rankedSteps);
+            int stepF = filedSteps/abs(filedSteps);
+            for(int r=stepR,f=stepF; abs(r)<abs(rankedSteps); r+=stepR,f+=stepF) {
+                if(!square[sourceRank+r-1][sourceFile+f-1].isEmpty) {
+                    valid = false;
+                    break;
+                }
+            }
+        }
+
+        if(valid) {
+            destinedSquare->setPiece(sourceSquare->getPiece());
+            sourceSquare->isEmpty = true;
+            destinedSquare->isEmpty = false;
+        }
+        else {
+            cout << "Invalid Move! Queen Cannot Jump Other Pieces. Move Again: ";
+            turn();
+        }
     }
     else {
         cout << "Invalid Move! Queen Cannot Move Like This. Move Again: ";
