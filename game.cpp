@@ -5,42 +5,12 @@ using namespace std;
 enum Color { WHITE, BLACK };
 enum Piece { PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING };
 
-class BoardSquare;
-
-class ChessPiece
-{
-    private:
-        Piece id;
-        Color color;
-        string name;
-
-    public:
-        bool pawnMoved; //To Check if the Pawn is Once Moved
-
-        void setID(Piece); //To Set ID and Derive the Piece-Name
-		void setColor(Color c) { color = c; }
-		Piece getID() { return id; }
-        Color getColor() { return color; }
-        string getName() { return name; }
-
-        bool Move(); //To Move the ChessPiece
-    
-    private:
-        bool movePawn();
-        bool moveKnight();
-        bool moveBishop();
-        bool moveRook();
-        bool moveQueen();
-        bool moveKing();
-};
-
 class BoardSquare
 {
     private:
         int rank;
         int fileNumber;
         char file;
-        ChessPiece piece;
 
     public:
         bool isEmpty;
@@ -51,29 +21,52 @@ class BoardSquare
         int getRank() { return rank; }
         int getFileNumber() { return fileNumber; }
         char getFile() { return file; }
+};
+
+class ChessPiece : public BoardSquare
+{
+    private:
+        Piece id;
+        Color color;
+        string name;
+
+    public:
+        bool pawnMoved; //To Check if the Pawn is Once Moved
         
-        void setPiece(ChessPiece p) { piece = p; }
-		ChessPiece getPiece() { return piece; }
-        ChessPiece* getPieceReference() { return &piece; }
+        void setID(Piece); //To Set ID and Derive the Piece-Name
+		void setColor(Color c) { color = c; }
+        Piece getID() { return id; }
+        Color getColor() { return color; }
+        string getName() { return name; }
+        
+        bool Move(); //To Move the ChessPiece
+
+    private:
+        bool movePawn();
+        bool moveKnight();
+        bool moveBishop();
+        bool moveRook();
+        bool moveQueen();
+        bool moveKing();
+        //void KingCheck();
 };
 
 BoardSquare square[8][8]; //ChessBoard Squares
 ChessPiece pawn[16], knight[4], bishop[4], rook[4], queen[2], king[2]; //Chess-Pieces
+ChessPiece emptyPiece;
 
 void initBoard(); //Initialize the ChessBoard
 void PrintBoard(Color); //Print the ChessBoard
 char DisplayPiece(int,int); //Display the ChessPiece
+ChessPiece* getPiece(int r, int f); //
 void Game(); //The Main Game-Sequence
 bool turn(); //Player's Turn
 bool over(); //To Check if the Game is Over
 
 Color player = WHITE; //Default First-Turn
-char fc1,fc2; //The Player Inputs, for Source & Destined Files
-int r1,r2; //The Player Inputs, for Source & Destined Ranks
-
+int sourceRank,sourceFile, destinedRank,destinedFile; //The Player Inputs, for Source & Destined Rank/File
+ChessPiece* ownPiece; //The Player's Input Source-Piece
 BoardSquare *sourceSquare,*destinedSquare; //The Player-Input's Source & Destined Squares
-int sourceRank,sourceFile; //Derive Source-Square's Rank/File
-int destinedRank,destinedFile; //Derive Destined-Square's Rank/File
 int rankedSteps,filedSteps; //The Difference between Squares's Ranks/Files
 
 int main()
@@ -89,18 +82,36 @@ int main()
     return 0;
 }
 
+BoardSquare::BoardSquare()
+{
+    isEmpty = true; //All Squares are Empty atFirst
+}
+
+void BoardSquare::setFileNumber(int f)
+{
+    fileNumber = f;
+    file = fileNumber-1 + 'a';
+}
+
+void ChessPiece::setID(Piece p)
+{
+    id = p;
+
+    switch (id)
+    {
+        case PAWN: name = "Pawn"; break;
+        case KNIGHT: name = "Knight"; break;
+        case BISHOP: name = "Bishop"; break;
+        case ROOK: name = "Rook"; break;
+        case QUEEN: name = "Queen"; break;
+        case KING: name = "King"; break;
+    }
+}
+
+
 void initBoard()
 {
-    //Board-Squares File & Rank
-    for(int r=0; r<8; r++) {
-        for(int f=0; f<8; f++) {
-            square[r][f].setFileNumber(f+1);
-            square[r][f].setRank(r+1);
-        }
-    }
-
-    //Chess-Pieces ID & Color
-    //Also Chess-Pieces Board-Setup
+    //Chess-Pieces ID, Color & Board-Setup
     for(int i=0; i<16; i++) 
     {
         pawn[i].setID(PAWN);
@@ -108,13 +119,13 @@ void initBoard()
         
         if(i<8) {
             pawn[i].setColor(WHITE);
-            for(int f=0; f<8; f++)
-                square[1][f].setPiece(pawn[i]);
+            pawn[i].setRank(2);
+            pawn[i].setFileNumber(i+1);
         }
         else {
             pawn[i].setColor(BLACK);
-            for(int f=0; f<8; f++)
-                square[6][f].setPiece(pawn[i]);
+            pawn[i].setRank(7);
+            pawn[i].setFileNumber(i-8+1);
         }
         
         if(i<4)
@@ -128,24 +139,29 @@ void initBoard()
                 bishop[i].setColor(WHITE);
                 rook[i].setColor(WHITE);
 
-                square[0][0].setPiece(rook[i]);
-                square[0][1].setPiece(knight[i]);
-                square[0][2].setPiece(bishop[i]);
-                square[0][5].setPiece(bishop[i]);
-                square[0][6].setPiece(knight[i]);
-                square[0][7].setPiece(rook[i]);
+                knight[i].setRank(1);
+                bishop[i].setRank(1);
+                rook[i].setRank(1);
             }
             else {
                 knight[i].setColor(BLACK);
                 bishop[i].setColor(BLACK);
                 rook[i].setColor(BLACK);
 
-                square[7][0].setPiece(rook[i]);
-                square[7][1].setPiece(knight[i]);
-                square[7][2].setPiece(bishop[i]);
-                square[7][5].setPiece(bishop[i]);
-                square[7][6].setPiece(knight[i]);
-                square[7][7].setPiece(rook[i]);
+                knight[i].setRank(8);
+                bishop[i].setRank(8);
+                rook[i].setRank(8);
+            }
+
+            if(i%2==0) {
+                rook[i].setFileNumber(1);
+                knight[i].setFileNumber(2);
+                bishop[i].setFileNumber(3);    
+            }
+            else {
+                bishop[i].setFileNumber(6);
+                knight[i].setFileNumber(7);
+                rook[i].setFileNumber(8);
             }
         }
         
@@ -158,19 +174,26 @@ void initBoard()
                 queen[i].setColor(WHITE);
                 king[i].setColor(WHITE);
 
-                square[0][3].setPiece(queen[i]);
-                square[0][4].setPiece(king[i]);
+                queen[i].setRank(1);
+                king[i].setRank(1);
             }
             else {
                 queen[i].setColor(BLACK);
                 king[i].setColor(BLACK);
 
-                square[7][3].setPiece(queen[i]);
-                square[7][4].setPiece(king[i]);
+                queen[i].setRank(8);
+                king[i].setRank(8);
             }
+
+            queen[i].setFileNumber(4);
+            king[i].setFileNumber(5);
         }
     }
-    
+
+    //The Absence of any Piece on the BoadSquare
+    emptyPiece.setRank(0);
+    emptyPiece.setFileNumber(0);
+
     //Chess-Pieces Squares are Now Occupied
     for(int rw=0,rb=6; rw<2 && rb<8; rw++,rb++) {
         for(int f=0; f<8; f++) {
@@ -182,6 +205,7 @@ void initBoard()
 
 void Game()
 {
+    //The Game would Never End 
     while(true) 
     {
         PrintBoard(player);
@@ -195,9 +219,6 @@ void Game()
         while(!turn())
             cout << "Move Again: ";
         
-        if(over())
-            break;
-
         //Next Turn
         if(player == WHITE)
             player = BLACK;
@@ -252,16 +273,16 @@ void PrintBoard(Color player)
 
 char DisplayPiece(int r, int f)
 {
-    ChessPiece piece = square[r][f].getPiece();
-    string name = piece.getName();
+    ChessPiece* piece = getPiece(r+1,f+1);
+    string name = piece->getName();
 
     if(name == "Knight")
         name = "Night"; //K-Silent (Knight represented by N)
 
     if(!square[r][f].isEmpty) {
-        if(piece.getColor() == WHITE)
+        if(piece->getColor() == WHITE)
             return toupper(name[0]);
-        else if(piece.getColor() == BLACK)
+        else if(piece->getColor() == BLACK)
             return tolower(name[0]);
     }
     else {
@@ -271,89 +292,79 @@ char DisplayPiece(int r, int f)
     return '-'; //Non-Executable
 }
 
+ChessPiece* getPiece(int r, int f)
+{
+    for(int i=0; i<16; i++)
+    {
+        if(pawn[i].getRank()==r && pawn[i].getFileNumber()==f)
+            return &pawn[i];
+
+        if(i<4)
+        {
+            if(knight[i].getRank()==r && knight[i].getFileNumber()==f)
+                return &knight[i];
+            else if(bishop[i].getRank()==r && bishop[i].getFileNumber()==f)
+                return &bishop[i];
+            else if(rook[i].getRank()==r && rook[i].getFileNumber()==f)
+                return &rook[i];
+        }
+
+        if(i<2)
+        {
+            if(queen[i].getRank()==r && queen[i].getFileNumber()==f)
+                return &queen[i];
+            else if(king[i].getRank()==r && king[i].getFileNumber()==f)
+                return &king[i];
+        }
+    }
+
+    return &emptyPiece;
+}
+
 bool turn()
 {
-    cin >> fc1 >> r1 >> fc2 >> r2;
+    char sourceFile_char,destinedFile_char;
+    cin >> sourceFile_char >> sourceRank >> destinedFile_char >> destinedRank;
 
-    if(fc1<'a'||fc1>'h' || fc2<'a'||fc2>'h') {
+    if(sourceFile_char<'a'||sourceFile_char>'h' || destinedFile_char<'a'||destinedFile_char>'h') {
 		cout << "Invalid File Character! ";
         return false;
 	}
-    else if(r1<1||r1>8 || r2<1||r2>8) {
+    else if(sourceRank<1||sourceRank>8 || destinedRank<1||destinedRank>8) {
         cout << "Invalid Rank Number! ";
         return false;
     }
 
     //Set File & Rank for Array-Index
-    r1--, r2--;
-    int f1 = fc1 - 'a';
-    int f2 = fc2 - 'a';
+    sourceFile = (sourceFile_char - 'a')+1;
+    destinedFile = (destinedFile_char - 'a')+1;
     
-    sourceSquare = &square[r1][f1];
-    destinedSquare = &square[r2][f2];
+    sourceSquare = &square[sourceRank-1][sourceFile-1];
+    destinedSquare = &square[destinedRank-1][destinedFile-1];
     
     if(sourceSquare->isEmpty) {
         cout << "There's No Piece! ";
         return false;
     }
-    else if(sourceSquare->getPiece().getColor() != player) {
+    
+    ownPiece = getPiece(sourceRank,sourceFile);
+    if(ownPiece->getColor() != player) {
         cout << "That's Not Your Piece! ";
         return false;
     }
-    
-    ChessPiece ownPiece = sourceSquare->getPiece();
-    return ownPiece.Move();
-}
-
-bool over()
-{
-    return false;
-}
-
-
-BoardSquare::BoardSquare()
-{
-    isEmpty = true; //All Squares are Empty atFirst
-}
-
-void BoardSquare::setFileNumber(int f)
-{
-    fileNumber = f;
-    file = fileNumber-1 + 'a';
-}
-
-void ChessPiece::setID(Piece p)
-{
-    id = p;
-
-    switch (id)
-    {
-        case PAWN: name = "Pawn"; break;
-        case KNIGHT: name = "Knight"; break;
-        case BISHOP: name = "Bishop"; break;
-        case ROOK: name = "Rook"; break;
-        case QUEEN: name = "Queen"; break;
-        case KING: name = "King"; break;
-    }
-}
-
-
-bool ChessPiece::Move()
-{
-    if(!destinedSquare->isEmpty) {
-        ChessPiece targetPiece = destinedSquare->getPiece();
-
-        if(color == targetPiece.getColor()) {
+    else if(!destinedSquare->isEmpty) {
+        ChessPiece* targetPiece = getPiece(destinedRank,destinedFile);
+        if(targetPiece->getColor() == player) {
             cout << "Invalid Move! Cannot Land on Own Piece. ";
             return false;
         }
     }
     
-    sourceRank = sourceSquare->getRank();
-	sourceFile = sourceSquare->getFileNumber();
-	destinedRank = destinedSquare->getRank();
-	destinedFile = destinedSquare->getFileNumber();
-    
+    return ownPiece->Move();
+}
+
+bool ChessPiece::Move()
+{
     rankedSteps = destinedRank-sourceRank;
     filedSteps = destinedFile-sourceFile;
     
@@ -369,8 +380,9 @@ bool ChessPiece::Move()
     }
 
     if(valid) {
-        destinedSquare->setPiece(sourceSquare->getPiece());
-        sourceSquare->isEmpty = true;             
+        ownPiece->setRank(destinedRank);
+        ownPiece->setFileNumber(destinedFile);
+        sourceSquare->isEmpty = true;
         destinedSquare->isEmpty = false;
     }
     else
@@ -379,10 +391,10 @@ bool ChessPiece::Move()
     return valid;
 }
 
+
 bool ChessPiece::movePawn()
 {
     bool valid;
-    ChessPiece* ownPiece = sourceSquare->getPieceReference();
     
     if(player==BLACK)
         rankedSteps = -rankedSteps;
@@ -393,6 +405,7 @@ bool ChessPiece::movePawn()
     
     if(stepStraight || stepDiagonal)
         valid = true;
+    
     else if(doubleStep)
     {
         valid = true;
