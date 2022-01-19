@@ -380,6 +380,11 @@ bool ChessPiece::Move()
     }
 
     if(valid) {
+        if(!destinedSquare->isEmpty) {
+            ChessPiece* targetPiece = getPiece(destinedRank,destinedFile);
+            targetPiece->setRank(0);
+            targetPiece->setFileNumber(0);
+        }
         ownPiece->setRank(destinedRank);
         ownPiece->setFileNumber(destinedFile);
         sourceSquare->isEmpty = true;
