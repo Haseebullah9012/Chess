@@ -32,7 +32,9 @@ class ChessPiece : public BoardSquare
 
     public:
         bool pawnMoved; //To Check if the Pawn is Once Moved
-        
+        bool captured; //To Check if the Piece is Captured
+        ChessPiece();
+
         void setID(Piece); //To Set ID and Derive the Piece-Name
 		void setColor(Color c) { color = c; }
         Piece getID() { return id; }
@@ -62,12 +64,15 @@ ChessPiece* getPiece(int r, int f); //
 void Game(); //The Main Game-Sequence
 bool turn(); //Player's Turn
 bool over(); //To Check if the Game is Over
+void PlayAgain(); //The PlayAgain Option
 
 Color player = WHITE; //Default First-Turn
+bool gameOver; //Check If the Game is Over
 int sourceRank,sourceFile, destinedRank,destinedFile; //The Player Inputs, for Source & Destined Rank/File
 ChessPiece* ownPiece; //The Player's Input Source-Piece
 BoardSquare *sourceSquare,*destinedSquare; //The Player-Input's Source & Destined Squares
 int rankedSteps,filedSteps; //The Difference between Squares's Ranks/Files
+char playAgain = 'Y'; //The Default PlayAgain Option
 
 int main()
 {
@@ -75,9 +80,20 @@ int main()
     cout << "On your Turn, Enter the Index (File & Rank) of Your Piece "
         << "and the Index (File & Rank) of the Destined-Square. " << endl;
 
-    initBoard();
-    Game();
+    do {
+        initBoard();
+        Game();
+        PlayAgain();
+    }
+    while(playAgain == 'Y');
+	
+	cout << endl << endl;
+    cout << "Thanks for Playing. Hope You Enjoyed the Game! \n";
+    cout << "It would be very Kind of you, if you give us an Honest Feedback. \n\n";
 
+    cout << "You can Find me in GitHub https://github.com/Haseebullah9012. \n";
+
+    getchar();
     getchar();
     return 0;
 }
@@ -85,6 +101,12 @@ int main()
 BoardSquare::BoardSquare()
 {
     isEmpty = true; //All Squares are Empty atFirst
+}
+
+ChessPiece::ChessPiece()
+{
+    pawnMoved = false;
+    captured = false;
 }
 
 void BoardSquare::setFileNumber(int f)
@@ -205,7 +227,6 @@ void initBoard()
 
 void Game()
 {
-    //The Game would Never End 
     while(true) 
     {
         PrintBoard(player);
@@ -219,12 +240,17 @@ void Game()
         while(!turn())
             cout << "Move Again: ";
         
+        if(gameOver)
+            break;
+        
         //Next Turn
         if(player == WHITE)
             player = BLACK;
         else
             player = WHITE;
     }
+
+    cout << endl << endl;
 }
 
 void PrintBoard(Color player)
@@ -384,7 +410,22 @@ bool ChessPiece::Move()
             ChessPiece* targetPiece = getPiece(destinedRank,destinedFile);
             targetPiece->setRank(0);
             targetPiece->setFileNumber(0);
+            targetPiece->captured = true;
+            
+            /*
+            if(targetPiece->getName() == "King") {
+                cout << "King Captured. ";
+                if(player == WHITE)
+                    cout << "White Won! ";
+                else 
+                    cout << "Black Won! ";
+                
+                cout << endl;
+                gameOver = true;
+            }
+            */
         }
+
         ownPiece->setRank(destinedRank);
         ownPiece->setFileNumber(destinedFile);
         sourceSquare->isEmpty = true;
@@ -392,6 +433,16 @@ bool ChessPiece::Move()
     }
     else
         cout << "Invalid Move! " << name << " Cannot Move Like This. ";
+
+    //King Captured
+    if(king[1].captured) {
+        cout << "King Captured. White Won! " << endl;
+        gameOver = true;
+    }
+    else if(king[0].captured) {
+        cout << "King Captured. Black Won! " << endl;
+        gameOver = true;
+    }
 
     return valid;
 }
@@ -560,4 +611,24 @@ bool ChessPiece::moveKing()
         valid = false;
 
     return valid;
+}
+
+
+void PlayAgain()
+{
+	cout << "Do You Want to Play Again (Y/N): ";
+	cin >> playAgain;
+	playAgain = toupper(playAgain);
+	
+	if(playAgain == 'Y') {
+		if(player == WHITE)
+            player = BLACK;
+        else 
+            player = WHITE;
+	}
+	else {
+		cout << "   Oops! Its not a legal Response. \n\n";
+		cout << "Again, ";
+		PlayAgain();
+	}
 }
