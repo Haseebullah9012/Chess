@@ -31,7 +31,7 @@ class ChessPiece : public BoardSquare
         string name;
 
     public:
-        bool pawnMoved; //To Check if the Pawn is Once Moved
+        bool pieceMoved; //To Check if the Piece is Once Moved (For Pawn, King, Rook)
         bool captured; //To Check if the Piece is Captured
         ChessPiece();
 
@@ -50,7 +50,6 @@ class ChessPiece : public BoardSquare
         bool moveRook();
         bool moveQueen();
         bool moveKing();
-        //void KingCheck();
 };
 
 BoardSquare square[8][8]; //ChessBoard Squares
@@ -60,7 +59,7 @@ ChessPiece emptyPiece;
 void initBoard(); //Initialize the ChessBoard
 void PrintBoard(Color); //Print the ChessBoard
 char DisplayPiece(int,int); //Display the ChessPiece
-ChessPiece* getPiece(int r, int f); //
+ChessPiece* getPiece(int r, int f); //To get the Piece present on a certain BoardSquare
 void Game(); //The Main Game-Sequence
 bool turn(); //Player's Turn
 bool over(); //To Check if the Game is Over
@@ -68,11 +67,12 @@ void PlayAgain(); //The PlayAgain Option
 
 Color player = WHITE; //Default First-Turn
 bool gameOver; //Check If the Game is Over
+char playAgain = 'Y'; //The Default PlayAgain Option
+
 int sourceRank,sourceFile, destinedRank,destinedFile; //The Player Inputs, for Source & Destined Rank/File
 ChessPiece* ownPiece; //The Player's Input Source-Piece
 BoardSquare *sourceSquare,*destinedSquare; //The Player-Input's Source & Destined Squares
 int rankedSteps,filedSteps; //The Difference between Squares's Ranks/Files
-char playAgain = 'Y'; //The Default PlayAgain Option
 
 int main()
 {
@@ -105,7 +105,7 @@ BoardSquare::BoardSquare()
 
 ChessPiece::ChessPiece()
 {
-    pawnMoved = false;
+    pieceMoved = false;
     captured = false;
 }
 
@@ -137,7 +137,6 @@ void initBoard()
     for(int i=0; i<16; i++) 
     {
         pawn[i].setID(PAWN);
-        pawn[i].pawnMoved = false;
         
         if(i<8) {
             pawn[i].setColor(WHITE);
@@ -411,8 +410,8 @@ bool ChessPiece::Move()
             targetPiece->setRank(0);
             targetPiece->setFileNumber(0);
             targetPiece->captured = true;
-            
-            /*
+
+            //King Captured
             if(targetPiece->getName() == "King") {
                 cout << "King Captured. ";
                 if(player == WHITE)
@@ -423,7 +422,6 @@ bool ChessPiece::Move()
                 cout << endl;
                 gameOver = true;
             }
-            */
         }
 
         ownPiece->setRank(destinedRank);
@@ -434,14 +432,27 @@ bool ChessPiece::Move()
     else
         cout << "Invalid Move! " << name << " Cannot Move Like This. ";
 
-    //King Captured
-    if(king[1].captured) {
-        cout << "King Captured. White Won! " << endl;
-        gameOver = true;
-    }
-    else if(king[0].captured) {
-        cout << "King Captured. Black Won! " << endl;
-        gameOver = true;
+    if(ownPiece->getName()=="Pawn" && (ownPiece->getRank() == 8 || ownPiece->getRank() == 1)) {
+        char p;
+        cout << "Pawn Moved to the Last-Rank. ";
+        
+        do {
+            cout << "Promote Pawn (N:Knight, B:Bishop, R:Rook, Q:Queen): ";
+            cin >> p;
+            p = toupper(p);
+
+            if(p=='N')
+                ownPiece->setID(KNIGHT);
+            else if(p=='B')
+                ownPiece->setID(BISHOP);
+            else if(p=='R')
+                ownPiece->setID(ROOK);
+            else if(p=='Q')
+                ownPiece->setID(QUEEN);
+            else
+                p = '-';
+        }
+        while(p=='-');
     }
 
     return valid;
@@ -457,7 +468,7 @@ bool ChessPiece::movePawn()
     
     bool stepStraight = (filedSteps==0 && rankedSteps==1) && destinedSquare->isEmpty;
     bool stepDiagonal = (abs(filedSteps)==1 && rankedSteps==1) && (!destinedSquare->isEmpty);
-    bool doubleStep = (filedSteps==0 && rankedSteps==2) && !ownPiece->pawnMoved;
+    bool doubleStep = (filedSteps==0 && rankedSteps==2) && !ownPiece->pieceMoved;
     
     if(stepStraight || stepDiagonal)
         valid = true;
@@ -476,8 +487,8 @@ bool ChessPiece::movePawn()
     else
         valid = false;
     
-    if(valid && !ownPiece->pawnMoved)
-        ownPiece->pawnMoved = true;
+    if(valid && !ownPiece->pieceMoved)
+        ownPiece->pieceMoved = true;
     
     return valid;
 }
@@ -550,6 +561,9 @@ bool ChessPiece::moveRook()
     else
         return false;
     
+    if(valid && !ownPiece->pieceMoved)
+        ownPiece->pieceMoved = true;
+    
     return valid;
 }
 
@@ -604,12 +618,64 @@ bool ChessPiece::moveKing()
 {
     bool valid;
     bool stepMovement = abs(rankedSteps)==1 || abs(filedSteps)==1;
+    bool castleMovement = (rankedSteps==0 && abs(filedSteps)==2) && !ownPiece->pieceMoved;
 
     if(stepMovement)
         valid = true;
+    
+    else if(castleMovement) {
+        valid = true;
+
+        int f;
+        if(filedSteps==2)
+            f=1; //KingSide
+        else
+            f=-1; //QueenSide
+        
+        if(!square[sourceRank-1][sourceFile+f-1].isEmpty)
+            valid = false; //King's Neighbor Squares
+        
+        else {
+            //Rook's CastleMovement (Rook's actually Moved Here)
+            if(filedSteps==2) {
+                if(player==WHITE && !rook[1].pieceMoved)
+                    rook[1].setFileNumber(6); //KingSide WhiteRook                 
+                else if(player==BLACK && !rook[3].pieceMoved)
+                    rook[3].setFileNumber(6); //KingSide BlackRook
+                else
+                    valid = false; //Rook has Moved Earlier
+                
+                if(valid) {
+                    square[sourceRank-1][7].isEmpty = true;
+                    square[sourceRank-1][5].isEmpty = false;
+                }
+            }
+            else {
+                f=-3;
+                if(!square[sourceRank-1][sourceFile+f-1].isEmpty)
+                    valid = false; //Queenside Rook's Neighbor Squares
+                else {
+                    if(player==WHITE && !rook[0].pieceMoved)
+                        rook[0].setFileNumber(4); //QueenSide WhiteRook
+                    else if(player==BLACK && !rook[2].pieceMoved)
+                        rook[2].setFileNumber(4); //QueenSide BlackRook
+                    else 
+                        valid = false;
+                    
+                    if(valid) {
+                        square[sourceRank-1][0].isEmpty = true;
+                        square[sourceRank-1][3].isEmpty = false;
+                    }
+                }
+            }
+        }
+    }
     else
         valid = false;
 
+    if(valid && !ownPiece->pieceMoved)
+        ownPiece->pieceMoved = true;
+    
     return valid;
 }
 
