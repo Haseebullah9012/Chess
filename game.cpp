@@ -17,7 +17,7 @@ class BoardSquare
         BoardSquare();
 
         void setRank(int r) { rank = r; }
-		void setFileNumber(int); //To Set File Number and Derive the File-Character
+        void setFileNumber(int); //To Set File Number and Derive the File-Character
         int getRank() { return rank; }
         int getFileNumber() { return fileNumber; }
         char getFile() { return file; }
@@ -36,7 +36,7 @@ class ChessPiece : public BoardSquare
         ChessPiece();
 
         void setID(Piece); //To Set ID and Derive the Piece-Name
-		void setColor(Color c) { color = c; }
+        void setColor(Color c) { color = c; }
         Piece getID() { return id; }
         Color getColor() { return color; }
         string getName() { return name; }
@@ -63,6 +63,8 @@ ChessPiece* getPiece(int r, int f); //To get the Piece present on a certain Boar
 void Game(); //The Main Game-Sequence
 bool turn(); //Player's Turn
 bool over(); //To Check if the Game is Over
+
+bool QuitGame(); //The Quit Game Option
 void PlayAgain(); //The PlayAgain Option
 
 Color player = WHITE; //Default First-Turn
@@ -76,7 +78,9 @@ int rankedSteps,filedSteps; //The Difference between Squares's Ranks/Files
 
 int main()
 {
-    cout << "\n Welcome to the Haseebullah's Chess! \n" << endl;
+    cout << "\n Welcome to the Haseebullah's Chess Game! \n"
+        << "You are Advised to Consult the Readme File, before Playing the Game. \n"
+		<< endl;
     cout << "On your Turn, Enter the Index (File & Rank) of Your Piece "
         << "and the Index (File & Rank) of the Destined-Square. " << endl;
 
@@ -90,10 +94,8 @@ int main()
 	cout << endl << endl;
     cout << "Thanks for Playing. Hope You Enjoyed the Game! \n";
     cout << "It would be very Kind of you, if you give us an Honest Feedback. \n\n";
-
     cout << "You can Find me in GitHub https://github.com/Haseebullah9012. \n";
 
-    getchar();
     getchar();
     return 0;
 }
@@ -350,8 +352,16 @@ bool turn()
 {
     char sourceFile_char,destinedFile_char;
     cin >> sourceFile_char >> sourceRank >> destinedFile_char >> destinedRank;
+    
+    if(sourceFile_char=='-' && sourceRank==1 || destinedFile_char=='-' && destinedRank==1)
+        return QuitGame();
 
-    if(sourceFile_char<'a'||sourceFile_char>'h' || destinedFile_char<'a'||destinedFile_char>'h') {
+    if(cin.fail()) {
+		cin.clear(); cin.ignore(255, '\n');
+		cout << "Invalid Input! ";
+        return false;
+	}
+    else if(sourceFile_char<'a'||sourceFile_char>'h' || destinedFile_char<'a'||destinedFile_char>'h') {
 		cout << "Invalid File Character! ";
         return false;
 	}
@@ -680,19 +690,33 @@ bool ChessPiece::moveKing()
 }
 
 
+bool QuitGame()
+{
+    char quit;
+    cout << "Do You Really Want to Quit the Game (Y/N): ";
+    cin >> quit;
+    cin.ignore(255, '\n');
+    quit = toupper(quit);
+    
+    if(quit == 'Y') {
+        cout << "   Game Withdraw! \n\n";
+        gameOver = true;
+        return true;
+    }
+    else {
+        cout << "Game Continue! ";
+        return false;
+    }
+}
+
 void PlayAgain()
 {
 	cout << "Do You Want to Play Again (Y/N): ";
 	cin >> playAgain;
+    cin.ignore(255, '\n');
 	playAgain = toupper(playAgain);
 	
-	if(playAgain == 'Y') {
-		if(player == WHITE)
-            player = BLACK;
-        else 
-            player = WHITE;
-	}
-	else {
+	if(playAgain != 'Y' && playAgain != 'N') {
 		cout << "   Oops! Its not a legal Response. \n\n";
 		cout << "Again, ";
 		PlayAgain();
