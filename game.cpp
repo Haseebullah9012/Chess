@@ -25,7 +25,7 @@ class BoardSquare
 
 class ChessPiece : public BoardSquare
 {
-    private:
+    protected:
         Piece id;
         Color color;
         string name;
@@ -41,20 +41,60 @@ class ChessPiece : public BoardSquare
         Color getColor() { return color; }
         string getName() { return name; }
         
-        bool Move(); //To Move the ChessPiece
-
-    private:
-        bool movePawn();
-        bool moveKnight();
-        bool moveBishop();
-        bool moveRook();
-        bool moveQueen();
-        bool moveKing();
+        virtual bool Move(); //To Move the ChessPiece
 };
 
+class Pawn : public ChessPiece
+{
+    public:
+        Pawn() { id = PAWN; name = "Pawn"; }
+        bool Move();
+}
+pawn[16];
+
+class Knight : public ChessPiece
+{
+    public:
+        Knight() { id = KNIGHT; name = "Knight"; }
+        bool Move();
+}
+knight[4];
+
+class Bishop : public ChessPiece
+{
+    public:
+        Bishop() { id = BISHOP; name = "Bishop"; }
+        bool Move();
+}
+bishop[4];
+
+class Rook : public ChessPiece
+{
+    public:
+        Rook() { id = ROOK; name = "Rook"; }
+        bool Move();
+}
+rook[4];
+
+class Queen : public ChessPiece
+{
+    public:
+        Queen() { id = QUEEN; name = "Queen"; }
+        bool Move();
+}
+queen[2];
+
+class King : public ChessPiece
+{
+    public:
+        King() { id = KING; name = "King"; }
+        bool Move();
+}
+king[2];
+
+
 BoardSquare square[8][8]; //ChessBoard Squares
-ChessPiece pawn[16], knight[4], bishop[4], rook[4], queen[2], king[2]; //Chess-Pieces
-ChessPiece emptyPiece;
+ChessPiece emptyPiece; //An Absence of Chesspiece
 
 void initBoard(); //Initialize the ChessBoard
 void PrintBoard(Color); //Print the ChessBoard
@@ -135,11 +175,9 @@ void ChessPiece::setID(Piece p)
 
 void initBoard()
 {
-    //Chess-Pieces ID, Color & Board-Setup
+    //Chess-Pieces Color & Board-Setup
     for(int i=0; i<16; i++) 
     {
-        pawn[i].setID(PAWN);
-        
         if(i<8) {
             pawn[i].setColor(WHITE);
             pawn[i].setRank(2);
@@ -153,10 +191,6 @@ void initBoard()
         
         if(i<4)
         {
-            knight[i].setID(KNIGHT);
-            bishop[i].setID(BISHOP);
-            rook[i].setID(ROOK);
-
             if(i<2) {
                 knight[i].setColor(WHITE);
                 bishop[i].setColor(WHITE);
@@ -190,9 +224,6 @@ void initBoard()
         
         if(i<2)
         {
-            queen[i].setID(QUEEN);
-            king[i].setID(KING);
-
             if(i==0) {
                 queen[i].setColor(WHITE);
                 king[i].setColor(WHITE);
@@ -395,7 +426,7 @@ bool turn()
         }
     }
     
-    return ownPiece->Move();
+    return ownPiece->ChessPiece::Move();
 }
 
 bool ChessPiece::Move()
@@ -403,17 +434,7 @@ bool ChessPiece::Move()
     rankedSteps = destinedRank-sourceRank;
     filedSteps = destinedFile-sourceFile;
     
-    bool valid;
-    switch(id)
-    {
-        case PAWN: valid = movePawn(); break;
-        case KNIGHT: valid = moveKnight(); break;
-        case BISHOP: valid = moveBishop(); break;
-        case ROOK: valid = moveRook(); break;
-        case QUEEN: valid = moveQueen(); break;
-        case KING: valid = moveKing(); break;
-    }
-
+    bool valid = this->Move();
     if(valid) {
         if(!destinedSquare->isEmpty) {
             ChessPiece* targetPiece = getPiece(destinedRank,destinedFile);
@@ -449,6 +470,7 @@ bool ChessPiece::Move()
         do {
             cout << "Promote Pawn (N:Knight, B:Bishop, R:Rook, Q:Queen): ";
             cin >> p;
+            cin.ignore(255, '\n');
             p = toupper(p);
 
             if(p=='N')
@@ -469,7 +491,7 @@ bool ChessPiece::Move()
 }
 
 
-bool ChessPiece::movePawn()
+bool Pawn::Move()
 {
     bool valid;
     
@@ -503,7 +525,7 @@ bool ChessPiece::movePawn()
     return valid;
 }
 
-bool ChessPiece::moveKnight()
+bool Knight::Move()
 {
     bool valid;
     bool rankedMovement = abs(rankedSteps)==2 && abs(filedSteps)==1;
@@ -517,7 +539,7 @@ bool ChessPiece::moveKnight()
     return valid;
 }
 
-bool ChessPiece::moveBishop()
+bool Bishop::Move()
 {
     bool valid;
     bool diagonalMovement = abs(rankedSteps)==abs(filedSteps);
@@ -540,7 +562,7 @@ bool ChessPiece::moveBishop()
     return valid;
 }
 
-bool ChessPiece::moveRook()
+bool Rook::Move()
 {
     bool valid;
     bool rankedMovement = destinedFile==sourceFile;
@@ -577,7 +599,7 @@ bool ChessPiece::moveRook()
     return valid;
 }
 
-bool ChessPiece::moveQueen()
+bool Queen::Move()
 {
     bool valid;
     bool diagonalMovement = abs(rankedSteps)==abs(filedSteps);
@@ -624,7 +646,7 @@ bool ChessPiece::moveQueen()
     return valid;
 }
 
-bool ChessPiece::moveKing()
+bool King::Move()
 {
     bool valid;
     bool stepMovement = abs(rankedSteps)==1 || abs(filedSteps)==1;
